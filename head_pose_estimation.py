@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 import math
 from face_detector import get_face_detector, find_faces
-from face_landmarks import get_landmark_model, detect_marks
+from face_landmarks import get_landmark_model, detect_marks, draw_marks
 
 def get_2d_points(img, rotation_vector, translation_vector, camera_matrix, val):
     """Return the 3D points present as 2D for making annotation box"""
@@ -129,7 +129,8 @@ landmark_model = get_landmark_model()
 cap = cv2.VideoCapture(0)
 ret, img = cap.read()
 size = img.shape
-font = cv2.FONT_HERSHEY_SIMPLEX 
+font = cv2.FONT_HERSHEY_SIMPLEX
+
 # 3D model points.
 model_points = np.array([
                             (0.0, 0.0, 0.0),             # Nose tip
@@ -154,6 +155,9 @@ while True:
         faces = find_faces(img, face_model)
         for face in faces:
             marks = detect_marks(img, landmark_model, face)
+
+            draw_marks(img, marks)
+            
             # mark_detector.draw_marks(img, marks, color=(0, 255, 0))
             image_points = np.array([
                                     marks[30],     # Nose tip
@@ -166,6 +170,7 @@ while True:
             dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
             (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_UPNP)
             
+            draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
             
             # Project a 3D point (0, 0, 1000.0) onto the image plane.
             # We use this to draw a line sticking out of the nose

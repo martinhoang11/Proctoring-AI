@@ -113,7 +113,7 @@ def detect_marks(img, model, face):
     predictions = model.signatures["predict"](
         tf.constant([face_img], dtype=tf.uint8))
 
-    # Convert predictions to landmarks.
+    # # Convert predictions to landmarks.
     marks = np.array(predictions['output']).flatten()[:136]
     marks = np.reshape(marks, (-1, 2))
     
