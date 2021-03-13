@@ -156,8 +156,8 @@ while True:
         for face in faces:
             marks = detect_marks(img, landmark_model, face)
 
-            draw_marks(img, marks)
-            
+            # draw_marks(img, marks)
+
             # mark_detector.draw_marks(img, marks, color=(0, 255, 0))
             image_points = np.array([
                                     marks[30],     # Nose tip
@@ -166,9 +166,9 @@ while True:
                                     marks[45],     # Right eye right corne
                                     marks[48],     # Left Mouth corner
                                     marks[54]      # Right mouth corner
-                                ], dtype="double")
+                                ], dtype="float")
             dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
-            (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_UPNP)
+            (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs)
             
             draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
             
@@ -186,10 +186,12 @@ while True:
             x1, x2 = head_pose_points(img, rotation_vector, translation_vector, camera_matrix)
 
             cv2.line(img, p1, p2, (0, 255, 255), 2)
-            cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
+
+            # cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
             # for (x, y) in marks:
             #     cv2.circle(img, (x, y), 4, (255, 255, 0), -1)
             # cv2.putText(img, str(p1), p1, font, 1, (0, 255, 255), 1)
+            
             try:
                 m = (p2[1] - p1[1])/(p2[0] - p1[0])
                 ang1 = int(math.degrees(math.atan(m)))
@@ -203,22 +205,22 @@ while True:
                 ang2 = 90
                 
                 # print('div by zero error')
-            if ang1 >= 48:
+            if ang1 <= -48:
                 print('Head down')
-                cv2.putText(img, 'Head down', (30, 30), font, 2, (255, 255, 128), 3)
-            elif ang1 <= -48:
+                cv2.putText(img, 'Head down', (10, 30), font, 1.5, (255, 255, 128), 3)
+            elif ang1 >= 48:
                 print('Head up')
-                cv2.putText(img, 'Head up', (30, 30), font, 2, (255, 255, 128), 3)
+                cv2.putText(img, 'Head up', (10, 30), font, 1.5, (255, 255, 128), 3)
              
             if ang2 >= 48:
                 print('Head right')
-                cv2.putText(img, 'Head right', (90, 30), font, 2, (255, 255, 128), 3)
+                cv2.putText(img, 'Head right', (300, 30), font, 1.5, (255, 255, 128), 3)
             elif ang2 <= -48:
                 print('Head left')
-                cv2.putText(img, 'Head left', (90, 30), font, 2, (255, 255, 128), 3)
+                cv2.putText(img, 'Head left', (300, 30), font, 1.5, (255, 255, 128), 3)
             
             cv2.putText(img, str(ang1), tuple(p1), font, 2, (128, 255, 255), 3)
-            cv2.putText(img, str(ang2), tuple(x1), font, 2, (255, 255, 128), 3)
+            # cv2.putText(img, str(ang2), tuple(x1), font, 2, (255, 255, 128), 3)
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -226,3 +228,14 @@ while True:
         break
 cv2.destroyAllWindows()
 cap.release()
+
+
+
+
+
+
+
+
+
+
+
