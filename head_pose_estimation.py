@@ -152,6 +152,9 @@ d_outer = [0]*5
 inner_points = [[61, 67], [62, 66], [63, 65]]
 d_inner = [0]*3
 
+#eye
+blink_count = 0
+
 # 3D model points.
 model_points = np.array([
                             (0.0, 0.0, 0.0),             # Nose tip
@@ -207,7 +210,7 @@ while True:
 
             cv2.line(img, p1, p2, (0, 255, 255), 2)
             cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
-            
+
             # for (x, y) in marks:
             #     cv2.circle(img, (x, y), 4, (255, 255, 0), -1)
             # cv2.putText(img, str(p1), p1, font, 1, (0, 255, 255), 1)
@@ -226,18 +229,18 @@ while True:
                 
                 # print('div by zero error')
             if ang1 <= -48:
-                print('Head down')
+                # print('Head down')
                 cv2.putText(img, 'Head down', (100, 30), font, 1, (255, 255, 128), 2)
 
             elif ang1 >= 48:
-                print('Head up')
+                # print('Head up')
                 cv2.putText(img, 'Head up', (100, 30), font, 1, (255, 255, 128), 2)
              
             if ang2 >= 28:
-                print('Head right')
+                # print('Head right')
                 cv2.putText(img, 'Head right', (100, 70), font, 1, (255, 255, 128), 2)
             elif ang2 <= -28:
-                print('Head left')
+                # print('Head left')
                 cv2.putText(img, 'Head left', (100, 70), font, 1, (255, 255, 128), 2)
             
             cv2.putText(img, str(ang1) + ': ', (10, 30), font, 1, (128, 255, 255), 2)
@@ -293,7 +296,11 @@ while True:
                     break
                 cv2.line(img, item, leye[index + 1], [0, 255, 0], 1)
 
-
+        if avg_eye_ratio > 0.8:
+            blink_count += 1
+        
+        cv2.putText(img, 'Blink: ' + str(blink_count), (10, 190), font,
+                        1, (128, 255, 255), 2)
 
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
