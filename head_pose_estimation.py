@@ -124,12 +124,19 @@ def head_pose_points(img, rotation_vector, translation_vector, camera_matrix):
     
     return (x, y)
     
+#general
 face_model = get_face_detector()
 landmark_model = get_landmark_model()
 cap = cv2.VideoCapture(0)
 ret, img = cap.read()
 size = img.shape
 font = cv2.FONT_HERSHEY_SIMPLEX
+
+#mouth
+outer_points = [[49, 59], [50, 58], [51, 57], [52, 56], [53, 55]]
+d_outer = [0]*5
+inner_points = [[61, 67], [62, 66], [63, 65]]
+d_inner = [0]*3
 
 # 3D model points.
 model_points = np.array([
@@ -170,11 +177,10 @@ while True:
             dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
             (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs)
             
-            draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
+            # draw_annotation_box(img, rotation_vector, translation_vector, camera_matrix)
             
             # Project a 3D point (0, 0, 1000.0) onto the image plane.
             # We use this to draw a line sticking out of the nose
-            
             (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
             
             for p in image_points:
@@ -184,10 +190,9 @@ while True:
             p1 = ( int(image_points[0][0]), int(image_points[0][1]))
             p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
             x1, x2 = head_pose_points(img, rotation_vector, translation_vector, camera_matrix)
-
             cv2.line(img, p1, p2, (0, 255, 255), 2)
 
-            # cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
+            cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
             # for (x, y) in marks:
             #     cv2.circle(img, (x, y), 4, (255, 255, 0), -1)
             # cv2.putText(img, str(p1), p1, font, 1, (0, 255, 255), 1)
@@ -207,20 +212,40 @@ while True:
                 # print('div by zero error')
             if ang1 <= -48:
                 print('Head down')
-                cv2.putText(img, 'Head down', (10, 30), font, 1.5, (255, 255, 128), 3)
+                cv2.putText(img, 'Head down', (100, 30), font, 1, (255, 255, 128), 2)
+
             elif ang1 >= 48:
                 print('Head up')
-                cv2.putText(img, 'Head up', (10, 30), font, 1.5, (255, 255, 128), 3)
+                cv2.putText(img, 'Head up', (100, 30), font, 1, (255, 255, 128), 2)
              
-            if ang2 >= 48:
+            if ang2 >= 28:
                 print('Head right')
-                cv2.putText(img, 'Head right', (300, 30), font, 1.5, (255, 255, 128), 3)
-            elif ang2 <= -48:
+                cv2.putText(img, 'Head right', (100, 70), font, 1, (255, 255, 128), 2)
+            elif ang2 <= -28:
                 print('Head left')
-                cv2.putText(img, 'Head left', (300, 30), font, 1.5, (255, 255, 128), 3)
+                cv2.putText(img, 'Head left', (100, 70), font, 1, (255, 255, 128), 2)
             
-            cv2.putText(img, str(ang1), tuple(p1), font, 2, (128, 255, 255), 3)
-            # cv2.putText(img, str(ang2), tuple(x1), font, 2, (255, 255, 128), 3)
+            cv2.putText(img, str(ang1) + ': ', (10, 30), font, 1, (128, 255, 255), 2)
+            cv2.putText(img, str(ang2) + ': ', (10, 70), font, 1, (255, 255, 128), 2)
+
+        cnt_outer = 0
+        cnt_inner = 0
+        draw_marks(img, marks[48:])
+    
+        for i, (p1, p2) in enumerate(outer_points):
+            if d_outer[i] + 5 < marks[p2][1] - marks[p1][1]:
+                cnt_outer += 1 
+        for i, (p1, p2) in enumerate(inner_points):
+            if d_inner[i] + 4 <  marks[p2][1] - marks[p1][1]:
+                cnt_inner += 1
+        
+        cv2.putText(img, 'Mouth: ', (10, 110), font,
+                    1, (0, 255, 255), 2)
+        if cnt_outer > 3 and cnt_inner > 2:
+            
+            cv2.putText(img, 'open', (120, 110), font,
+                    1, (255, 255, 128), 2)
+        
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
