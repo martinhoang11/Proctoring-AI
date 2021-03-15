@@ -8,6 +8,7 @@ Created on Fri Jul 31 03:00:36 2020
 import cv2
 import numpy as np
 import math
+from scipy.spatial import distance as dist
 from face_detector import get_face_detector, find_faces
 from face_landmarks import get_landmark_model, detect_marks, draw_marks
 
@@ -123,6 +124,19 @@ def head_pose_points(img, rotation_vector, translation_vector, camera_matrix):
     x = point_2d[2]
     
     return (x, y)
+
+def eye_aspect_ratio(eye):
+	# compute the euclidean distances between the two sets of
+	# vertical eye landmarks (x, y)-coordinates
+	A = dist.euclidean(eye[1], eye[5])
+	B = dist.euclidean(eye[2], eye[4])
+	# compute the euclidean distance between the horizontal
+	# eye landmark (x, y)-coordinates
+	C = dist.euclidean(eye[0], eye[3])
+	# compute the eye aspect ratio
+	ear = (A + B) / (2.0 * C)
+	# return the eye aspect ratio
+	return ear
     
 #general
 face_model = get_face_detector()
@@ -190,9 +204,10 @@ while True:
             p1 = ( int(image_points[0][0]), int(image_points[0][1]))
             p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
             x1, x2 = head_pose_points(img, rotation_vector, translation_vector, camera_matrix)
-            cv2.line(img, p1, p2, (0, 255, 255), 2)
 
+            cv2.line(img, p1, p2, (0, 255, 255), 2)
             cv2.line(img, tuple(x1), tuple(x2), (255, 255, 0), 2)
+            
             # for (x, y) in marks:
             #     cv2.circle(img, (x, y), 4, (255, 255, 0), -1)
             # cv2.putText(img, str(p1), p1, font, 1, (0, 255, 255), 1)
@@ -226,26 +241,60 @@ while True:
                 cv2.putText(img, 'Head left', (100, 70), font, 1, (255, 255, 128), 2)
             
             cv2.putText(img, str(ang1) + ': ', (10, 30), font, 1, (128, 255, 255), 2)
-            cv2.putText(img, str(ang2) + ': ', (10, 70), font, 1, (255, 255, 128), 2)
+            cv2.putText(img, str(ang2) + ': ', (10, 70), font, 1, (128, 255, 255), 2)
+        
+            #mouth part
+            cnt_outer = 0
+            cnt_inner = 0
+            draw_marks(img, marks[48:])
 
-        cnt_outer = 0
-        cnt_inner = 0
-        draw_marks(img, marks[48:])
-    
-        for i, (p1, p2) in enumerate(outer_points):
-            if d_outer[i] + 5 < marks[p2][1] - marks[p1][1]:
-                cnt_outer += 1 
-        for i, (p1, p2) in enumerate(inner_points):
-            if d_inner[i] + 4 <  marks[p2][1] - marks[p1][1]:
-                cnt_inner += 1
-        
-        cv2.putText(img, 'Mouth: ', (10, 110), font,
-                    1, (0, 255, 255), 2)
-        if cnt_outer > 3 and cnt_inner > 2:
+            for i, (p1, p2) in enumerate(outer_points):
+                if d_outer[i] + 5 < marks[p2][1] - marks[p1][1]:
+                    cnt_outer += 1 
+            for i, (p1, p2) in enumerate(inner_points):
+                if d_inner[i] + 5 <  marks[p2][1] - marks[p1][1]:
+                    cnt_inner += 1
             
-            cv2.putText(img, 'open', (120, 110), font,
-                    1, (255, 255, 128), 2)
-        
+            cv2.putText(img, 'Mouth: ', (10, 110), font,
+                        1, (0, 255, 255), 2)
+                        
+            if cnt_outer > 3 and cnt_inner > 2:
+                cv2.putText(img, 'open', (120, 110), font,
+                        1, (255, 255, 128), 2)
+            
+            #eye part
+            draw_marks(img, marks[36:48])
+            reye = [marks[36], marks[37], marks[38], marks[39], marks[40], marks[41]]
+            leye = [marks[42], marks[43], marks[44], marks[45], marks[46], marks[47]]
+            
+            
+
+            reye_ratio = eye_aspect_ratio(reye)
+            leye_ratio = eye_aspect_ratio(leye)
+
+            avg_eye_ratio = round((reye_ratio + leye_ratio) / 2.0, 2)
+            print(avg_eye_ratio)
+
+            cv2.putText(img, 'EAR: ' + str(avg_eye_ratio), (10, 150), font,
+                        1, (128, 255, 255), 2)
+            
+            reye = list(map(tuple, reye))
+            leye = list(map(tuple, leye))
+            
+            for index, item in enumerate(reye): 
+                if index == len(reye) - 1:
+                    cv2.line(img, item, reye[0], [0, 255, 0], 1)
+                    break
+                cv2.line(img, item, reye[index + 1], [0, 255, 0], 1)
+
+            for index, item in enumerate(leye): 
+                if index == len(leye) - 1:
+                    cv2.line(img, item, leye[0], [0, 255, 0], 1)
+                    break
+                cv2.line(img, item, leye[index + 1], [0, 255, 0], 1)
+
+
+
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
